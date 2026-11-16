@@ -38,14 +38,14 @@ def as_list(v):
     return v if isinstance(v, list) else ([v] if v else [])
 
 
-def pick(front: dict, jobmap: dict) -> tuple[str | None, str | None]:
-    """(직무, None) 또는 (None, 제외 사유)."""
+def pick(front: dict, jobmap: dict, test_all: bool = False) -> tuple[str | None, str | None]:
+    """(직무, None) 또는 (None, 제외 사유). test_all 은 기준 1·3(사람 판단·확정)을 건너뛴다."""
     tags = as_list(front.get("tags"))
-    if SHARE_TAG not in tags:
+    if SHARE_TAG not in tags and not test_all:
         return None, "공유 표시 없음"
     if front.get("type") not in TYPES:
         return None, f"유형 제외({front.get('type')})"
-    if front.get("status") not in CONFIRMED:
+    if front.get("status") not in CONFIRMED and not test_all:
         return None, f"미확정({front.get('status')})"
     job = next((t[4:] for t in tags if t.startswith("job/")), None) \
         or jobmap["domain_to_job"].get(front.get("domain"))
@@ -87,6 +87,8 @@ def main(argv=None) -> int:
     ap.add_argument("--contributor", required=True, help="소문자·숫자·하이픈 핸들 (예: swj)")
     ap.add_argument("--out", default=str(ROOT / "raw"))
     ap.add_argument("--dry-run", action="store_true")
+    # ponytail: 파이프라인 시험용. 실제 기여에는 쓰지 않는다 — 민감정보 검사(기준 5)는 그대로 돈다
+    ap.add_argument("--test-all", action="store_true", help="공유 표시·확정 여부를 무시 (테스트 데이터 전용)")
     a = ap.parse_args(argv)
     if not re.fullmatch(r"[a-z0-9-]+", a.contributor):
         ap.error("--contributor 는 소문자·숫자·하이픈만")
@@ -111,7 +113,7 @@ def main(argv=None) -> int:
             if not parsed:
                 continue
             front, body = parsed
-            job, why = pick(front, jobmap)
+            job, why = pick(front, jobmap, a.test_all)
             if why == "공유 표시 없음":
                 report["unshared"] += 1
                 continue
