@@ -1,0 +1,10 @@
+# 공개 저장소다. 내보낸 노트 본문과 대장은 사내 지식이므로 절대 커밋하지 않는다.
+# 실제 기여본은 사내 GitLab MR 로만 옮긴다 (GOVERNANCE.md 4장).
+raw/*
+!raw/README.md
+
+# 사내 도메인·고객 식별어 같은 로컬 차단어 목록
+.blocklist
+
+__pycache__/
+.DS_Store
